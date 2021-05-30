@@ -2,11 +2,6 @@
 -------------------------------------------------
    File Name：     GetPageDetail.py
    Description :   获取文献摘要等信息存储至excel
-   Author :        Cyrus_Ren
-   date：          2018/12/12
--------------------------------------------------
-   Change Activity:
-
 -------------------------------------------------
 """
 __author__ = 'Cyrus_Ren'
@@ -35,6 +30,7 @@ class PageDetail(object):
         #self.sheet.write(0, 6, '来源', self.basic_style)
         self.sheet.write(0, 6, '发表时间', self.basic_style)
         self.sheet.write(0, 7, '数据库', self.basic_style)
+        self.sheet.write(0, 8, '链接', self.basic_style)
         '''
         if config.crawl_isDownLoadLink == '1':
             self.sheet.write(0, 8, '下载地址', self.basic_style)
@@ -44,7 +40,7 @@ class PageDetail(object):
         self.cnkiUserKey = self.set_new_guid()
 
     def get_detail_page(self, session, result_url, page_url,
-                        single_refence_list):
+                        single_refence_list, download_url):
         '''
         发送三次请求
         前两次服务器注册 最后一次正式跳转
@@ -54,7 +50,7 @@ class PageDetail(object):
         self.single_refence_list = single_refence_list
         self.session = session
         self.session.cookies.set('cnkiUserKey', self.cnkiUserKey)
-        
+        self.download_url = download_url
         cur_url_pattern_compile = re.compile(
             r'.*?FileName=(.*?)&.*?DbCode=(.*?)&')
         cur_url_set = re.search(cur_url_pattern_compile, page_url)
@@ -86,7 +82,9 @@ class PageDetail(object):
         解析页面信息
         '''
         soup = BeautifulSoup(detail_page, 'lxml')
-
+        #print(soup.prettify())
+        #import sys
+        #sys.exit(0)
         # 获取作者单位信息
         orgn_list = soup.find_all("a", class_='author')
         self.orgn = ''
@@ -131,7 +129,7 @@ class PageDetail(object):
     def create_list(self):
         '''
         整理excel每一行的数据
-        序号 题名 作者 单位 关键字 摘要  来源 发表时间 数据库
+        序号 题名 作者 单位 关键字 摘要  来源 发表时间 数据库 链接
         '''
         self.reference_list = []
         for i in range(0, 3):
@@ -141,16 +139,16 @@ class PageDetail(object):
         self.reference_list.append(self.abstract)  # 摘要
         #self.reference_list.append(self.srcinfo)  # 来源
         self.reference_list.append(self.single_refence_list[4])  # 日期
-        self.reference_list.append(self.single_refence_list[5])  # 数据库
-   
-
+        self.reference_list.append(self.single_refence_list[3])  # 数据库
+        #self.reference_list.append()
+        self.reference_list.append(self.download_url)
     def wtire_excel(self):
         '''
         将获得的数据写入到excel
         '''
         self.create_list()
-        
-        for i in range(0, 8):
+
+        for i in range(0, 9):
             self.sheet.write(int(self.reference_list[0]), i, self.reference_list[i], self.basic_style)
 
     def set_style(self):
